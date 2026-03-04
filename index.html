@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yêu cầu Hệ thống Quản lý Phơi nhiễm & Rủi ro Tích tụ (P&C Insurance)</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Tailwind Config for Custom Palette -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1e3a8a', // Blue 900
+                        secondary: '#3b82f6', // Blue 500
+                        accent: '#f59e0b', // Amber 500
+                        neutralBg: '#f8fafc', // Slate 50
+                        surface: '#ffffff',
+                        textMain: '#334155', // Slate 700
+                        textLight: '#64748b' // Slate 500
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom Styles & Chart Container Enforcement */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
+            overflow-x: hidden;
+        }
+
+        /* Essential Chart Container Requirements */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 40vh;
+            min-height: 300px;
+            max-height: 450px;
+            background: #ffffff;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
+
+        @media (min-width: 1024px) {
+            .chart-container {
+                height: 50vh;
+                max-height: 500px;
+            }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+
+        /* Interactive Element Transitions */
+        .interactive-card {
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .interactive-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border-color: #3b82f6;
+        }
+    </style>
+</head>
+
+<!-- Chosen Palette: Corporate Slate & Trust Blue (Neutral backgrounds: Slate 50/White, Primary: Deep Blue, Accent: Amber/Warning). Designed to convey trust, stability, and professional data analysis suitable for the insurance sector. -->
+
+<!-- Application Structure Plan: The SPA uses a "Modern Dashboard & Documentation" layout. 
+    1. Sidebar Navigation: Allows quick jumping between distinct requirement domains (Overview, Data, Analytics, Modules).
+    2. Main Content Area: Displays the active section. This structure is chosen because software requirement documents are inherently modular. Instead of scrolling a 50-page PDF, stakeholders can interactively explore the specific system module they care about (e.g., IT focuses on Data, Actuaries focus on Analytics).
+    3. Interactive Components: Accordions for data fields and tabbed views for system architectures reduce cognitive overload. -->
+
+<!-- Visualization & Content Choices: 
+    - Overview: Metric Cards (HTML/CSS) -> Goal: Inform on system value -> Justification: Quick scanning of benefits.
+    - Data Requirements: Interactive Accordion (HTML/JS) -> Goal: Organize complex data schemas -> Justification: Hides complexity until requested.
+    - Accumulation Analysis: Bar Chart (Chart.js) -> Goal: Compare TIV by Region -> Justification: Shows how geographical exposure is tracked.
+    - EP Curve (Exceedance Probability): Area/Line Chart (Chart.js) -> Goal: Show core actuarial risk model -> Justification: Essential visual for accumulation risk, plotting loss against return periods.
+    - NO SVG/Mermaid: All icons use Unicode or Tailwind styled HTML elements. All charts use HTML5 Canvas via Chart.js. -->
+
+<!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+<body class="flex h-screen overflow-hidden">
+
+    <!-- Sidebar Navigation -->
+    <aside class="w-64 bg-primary text-white flex flex-col shadow-xl z-20 hidden md:flex flex-shrink-0">
+        <div class="p-6 border-b border-blue-800">
+            <h1 class="text-xl font-bold leading-tight">Hệ thống Quản lý Phơi nhiễm & Rủi ro Tích tụ</h1>
+            <p class="text-xs text-blue-300 mt-2">Dành cho BH Phi nhân thọ (P&C)</p>
+        </div>
+        <nav class="flex-1 p-4 space-y-2 overflow-y-auto" id="nav-menu">
+            <button data-target="sec-tongquan" class="nav-btn w-full text-left px-4 py-3 rounded-lg bg-blue-800 text-white font-medium transition-colors">1. Tổng quan Dự án</button>
+            <button data-target="sec-dulieu" class="nav-btn w-full text-left px-4 py-3 rounded-lg text-blue-200 hover:bg-blue-800 hover:text-white transition-colors">2. Yêu cầu Dữ liệu (Data)</button>
+            <button data-target="sec-tinh-toan" class="nav-btn w-full text-left px-4 py-3 rounded-lg text-blue-200 hover:bg-blue-800 hover:text-white transition-colors">3. Mô hình & Tính toán Rủi ro</button>
+            <button data-target="sec-chucnang" class="nav-btn w-full text-left px-4 py-3 rounded-lg text-blue-200 hover:bg-blue-800 hover:text-white transition-colors">4. Mô-đun Chức năng</button>
+        </nav>
+        <div class="p-4 text-xs text-blue-400 border-t border-blue-800 text-center">
+            Phiên bản PRD 1.0 (Interactive)
+        </div>
+    </aside>
+
+    <!-- Mobile Header -->
+    <div class="md:hidden fixed top-0 w-full bg-primary text-white p-4 z-30 flex justify-between items-center shadow-md">
+        <h1 class="font-bold text-sm truncate">Hệ thống Rủi ro Tích tụ P&C</h1>
+        <button id="mobile-menu-btn" class="px-3 py-1 bg-blue-700 rounded text-sm">&#9776; Menu</button>
+    </div>
+
+    <!-- Mobile Menu Overlay -->
+    <div id="mobile-menu" class="hidden fixed inset-0 bg-primary z-40 p-4 pt-16 flex flex-col space-y-2">
+        <button id="close-mobile-menu" class="absolute top-4 right-4 text-white text-2xl">&times;</button>
+        <button data-target="sec-tongquan" class="nav-btn w-full text-left px-4 py-3 rounded-lg bg-blue-800 text-white font-medium">1. Tổng quan Dự án</button>
+        <button data-target="sec-dulieu" class="nav-btn w-full text-left px-4 py-3 rounded-lg text-blue-200">2. Yêu cầu Dữ liệu</button>
+        <button data-target="sec-tinh-toan" class="nav-btn w-full text-left px-4 py-3 rounded-lg text-blue-200">3. Mô hình & Tính toán</button>
+        <button data-target="sec-chucnang" class="nav-btn w-full text-left px-4 py-3 rounded-lg text-blue-200">4. Mô-đun Chức năng</button>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 h-screen overflow-y-auto bg-neutralBg pt-16 md:pt-0 relative">
+        <div class="max-w-6xl mx-auto p-6 lg:p-10">
+
+            <!-- SECTION 1: TỔNG QUAN -->
+            <section id="sec-tongquan" class="content-section animate-fade-in block">
+                <header class="mb-8">
+                    <h2 class="text-3xl font-bold text-primary mb-3">1. Tổng quan Chương trình Yêu cầu</h2>
+                    <p class="text-lg text-textLight leading-relaxed">
+                        Phần này trình bày bối cảnh và mục tiêu nghiệp vụ của việc xây dựng Hệ thống Quản lý Phơi nhiễm (Exposure Management) và Tính toán rủi ro tích tụ (Accumulation Risk) cho doanh nghiệp bảo hiểm phi nhân thọ (P&C). Sự kiện rủi ro thảm họa (động đất, bão, lũ) có thể ảnh hưởng đồng thời đến nhiều hợp đồng bảo hiểm, do đó việc hiểu rõ và định lượng rủi ro tích tụ là yêu cầu bắt buộc để tối ưu hóa vốn và tái bảo hiểm.
+                    </p>
+                </header>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                    <div class="bg-surface p-6 rounded-xl border border-slate-200 shadow-sm border-t-4 border-t-blue-500">
+                        <div class="text-3xl mb-2">&#128205;</div>
+                        <h3 class="font-bold text-lg mb-2">Định vị Địa lý (Geocoding)</h3>
+                        <p class="text-sm text-textLight">Chuyển đổi địa chỉ rủi ro thành tọa độ (Lat/Long) để ánh xạ chính xác trên bản đồ rủi ro thiên tai.</p>
+                    </div>
+                    <div class="bg-surface p-6 rounded-xl border border-slate-200 shadow-sm border-t-4 border-t-amber-500">
+                        <div class="text-3xl mb-2">&#128200;</div>
+                        <h3 class="font-bold text-lg mb-2">Kiểm soát Tích tụ</h3>
+                        <p class="text-sm text-textLight">Nhận diện điểm nóng (Hotspots) nơi Tổng giá trị bảo hiểm (TIV) vượt quá ngưỡng chịu đựng rủi ro tại một khu vực.</p>
+                    </div>
+                    <div class="bg-surface p-6 rounded-xl border border-slate-200 shadow-sm border-t-4 border-t-emerald-500">
+                        <div class="text-3xl mb-2">&#128176;</div>
+                        <h3 class="font-bold text-lg mb-2">Tối ưu Tái bảo hiểm</h3>
+                        <p class="text-sm text-textLight">Cung cấp dữ liệu chính xác về rủi ro PML (Probable Maximum Loss) để đàm phán phí tái bảo hiểm cố định/tỷ lệ hiệu quả hơn.</p>
+                    </div>
+                </div>
+
+                <div class="bg-blue-50 p-6 rounded-xl border border-blue-100">
+                    <h3 class="font-bold text-primary mb-3">Quy trình Cốt lõi của Hệ thống</h3>
+                    <div class="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0 text-sm">
+                        <div class="bg-white p-3 rounded shadow text-center w-full md:w-1/4 border border-slate-200 font-medium text-slate-700">1. Thu thập Data Hợp đồng/Tài sản</div>
+                        <div class="text-blue-400 font-bold text-xl rotate-90 md:rotate-0">&#10132;</div>
+                        <div class="bg-white p-3 rounded shadow text-center w-full md:w-1/4 border border-slate-200 font-medium text-slate-700">2. Chuẩn hóa & Geocoding</div>
+                        <div class="text-blue-400 font-bold text-xl rotate-90 md:rotate-0">&#10132;</div>
+                        <div class="bg-white p-3 rounded shadow text-center w-full md:w-1/4 border border-slate-200 font-medium text-slate-700">3. Chạy Mô hình Thiên tai / Ring-fencing</div>
+                        <div class="text-blue-400 font-bold text-xl rotate-90 md:rotate-0">&#10132;</div>
+                        <div class="bg-white p-3 rounded shadow text-center w-full md:w-1/4 border border-slate-200 font-medium text-slate-700">4. Báo cáo Tích tụ & PML</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 2: YÊU CẦU DỮ LIỆU -->
+            <section id="sec-dulieu" class="content-section hidden animate-fade-in">
+                <header class="mb-8">
+                    <h2 class="text-3xl font-bold text-primary mb-3">2. Yêu cầu Cấu trúc Dữ liệu Đầu vào</h2>
+                    <p class="text-lg text-textLight leading-relaxed">
+                        Chất lượng của việc tính toán rủi ro tích tụ phụ thuộc hoàn toàn vào dữ liệu đầu vào. Phần này liệt kê các thực thể dữ liệu (Data Entities) bắt buộc hệ thống phải thu thập và chuẩn hóa từ hệ thống Core Insurance. Nhấp vào từng mục để xem chi tiết các trường dữ liệu yêu cầu.
+                    </p>
+                </header>
+
+                <div class="space-y-4" id="data-accordion">
+                    <!-- Accordion Item 1 -->
+                    <div class="border border-slate-200 rounded-lg bg-surface overflow-hidden interactive-card">
+                        <button class="w-full px-6 py-4 text-left font-bold text-slate-700 flex justify-between items-center bg-slate-50 hover:bg-slate-100" onclick="toggleAccordion('acc-policy')">
+                            <span>A. Dữ liệu Hợp đồng (Policy Data)</span>
+                            <span id="icon-acc-policy" class="text-xl transition-transform duration-200">&#43;</span>
+                        </button>
+                        <div id="acc-policy" class="px-6 py-0 max-h-0 overflow-hidden transition-all duration-300 bg-white">
+                            <div class="py-4">
+                                <p class="text-sm text-textLight mb-3">Thông tin chung về hợp đồng bảo hiểm làm cơ sở xác định thời hạn và điều kiện tài chính.</p>
+                                <ul class="list-disc pl-5 text-sm text-slate-700 space-y-1">
+                                    <li><span class="font-semibold text-slate-900">Mã hợp đồng (Policy ID):</span> Định danh duy nhất.</li>
+                                    <li><span class="font-semibold text-slate-900">Mã khách hàng (Client ID):</span> Liên kết rủi ro theo khách hàng.</li>
+                                    <li><span class="font-semibold text-slate-900">Sản phẩm (Line of Business - LOB):</span> VD: Tài sản, Hàng hóa, Xe cơ giới.</li>
+                                    <li><span class="font-semibold text-slate-900">Ngày hiệu lực / Ngày hết hạn:</span> Để tính toán phơi nhiễm tại một thời điểm cụ thể.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Accordion Item 2 -->
+                    <div class="border border-slate-200 rounded-lg bg-surface overflow-hidden interactive-card">
+                        <button class="w-full px-6 py-4 text-left font-bold text-slate-700 flex justify-between items-center bg-slate-50 hover:bg-slate-100" onclick="toggleAccordion('acc-location')">
+                            <span>B. Dữ liệu Vị trí & Tài sản (Location/Risk Data) <span class="text-red-500 text-xs ml-2">Quan trọng nhất</span></span>
+                            <span id="icon-acc-location" class="text-xl transition-transform duration-200">&#43;</span>
+                        </button>
+                        <div id="acc-location" class="px-6 py-0 max-h-0 overflow-hidden transition-all duration-300 bg-white">
+                            <div class="py-4">
+                                <p class="text-sm text-textLight mb-3">Thông tin vật lý của đối tượng bảo hiểm để phân tích không gian.</p>
+                                <ul class="list-disc pl-5 text-sm text-slate-700 space-y-1">
+                                    <li><span class="font-semibold text-slate-900">Địa chỉ chi tiết:</span> Số nhà, Đường, Quận/Huyện, Tỉnh/Thành phố.</li>
+                                    <li><span class="font-semibold text-slate-900">Tọa độ (Latitude/Longitude):</span> Kết quả của quá trình Geocoding.</li>
+                                    <li><span class="font-semibold text-slate-900">CRESTA Zone:</span> Mã vùng rủi ro theo chuẩn quốc tế hoặc nội bộ.</li>
+                                    <li><span class="font-semibold text-slate-900">Đặc tính tài sản:</span> Năm xây dựng, Số tầng, Vật liệu xây dựng (Occupancy/Construction class).</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Accordion Item 3 -->
+                    <div class="border border-slate-200 rounded-lg bg-surface overflow-hidden interactive-card">
+                        <button class="w-full px-6 py-4 text-left font-bold text-slate-700 flex justify-between items-center bg-slate-50 hover:bg-slate-100" onclick="toggleAccordion('acc-financial')">
+                            <span>C. Dữ liệu Tài chính & Điều khoản (Financial Terms)</span>
+                            <span id="icon-acc-financial" class="text-xl transition-transform duration-200">&#43;</span>
+                        </button>
+                        <div id="acc-financial" class="px-6 py-0 max-h-0 overflow-hidden transition-all duration-300 bg-white">
+                            <div class="py-4">
+                                <p class="text-sm text-textLight mb-3">Cần thiết để tính toán chính xác số tiền bảo hiểm thực tế phải trả (Net Retained Lines) sau khi áp dụng điều khoản.</p>
+                                <ul class="list-disc pl-5 text-sm text-slate-700 space-y-1">
+                                    <li><span class="font-semibold text-slate-900">Tổng giá trị bảo hiểm (TIV - Total Insured Value):</span> Phân tách theo Tòa nhà, Máy móc, Hàng hóa, Gián đoạn kinh doanh (BI).</li>
+                                    <li><span class="font-semibold text-slate-900">Mức khấu trừ (Deductibles):</span> Số tiền khách hàng tự chịu.</li>
+                                    <li><span class="font-semibold text-slate-900">Giới hạn bồi thường (Limits):</span> Giới hạn tối đa (Sub-limits) cho các rủi ro cụ thể (vd: giới hạn động đất).</li>
+                                    <li><span class="font-semibold text-slate-900">Tỷ lệ tham gia (Share %):</span> Tỷ lệ đồng bảo hiểm (nếu có).</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 3: TÍNH TOÁN & MÔ HÌNH HÓA -->
+            <section id="sec-tinh-toan" class="content-section hidden animate-fade-in">
+                <header class="mb-8">
+                    <h2 class="text-3xl font-bold text-primary mb-3">3. Phân tích & Trực quan hóa Rủi ro Tích tụ</h2>
+                    <p class="text-lg text-textLight leading-relaxed">
+                        Phần cốt lõi của hệ thống: Tính toán mức độ phơi nhiễm và mô phỏng thiệt hại. Hệ thống cần hỗ trợ tính toán theo khu vực định sẵn (CRESTA/Tỉnh thành) và mô phỏng thiệt hại tối đa có thể xảy ra (PML) dựa trên đường cong xác suất. Khám phá các biểu đồ tương tác dưới đây mô phỏng kết quả đầu ra của hệ thống.
+                    </p>
+                </header>
+
+                <!-- Chart 1: Exposure Accumulation -->
+                <div class="mb-10">
+                    <div class="flex justify-between items-end mb-4">
+                        <div>
+                            <h3 class="font-bold text-xl text-slate-800">Kiểm soát Phơi nhiễm theo Khu vực (Geographical Accumulation)</h3>
+                            <p class="text-sm text-textLight mt-1">Tổng giá trị bảo hiểm (TIV) đang đối mặt với rủi ro tại các vùng địa lý khác nhau so với ngân sách rủi ro tối đa (Capacity).</p>
+                        </div>
+                        <div class="hidden sm:block">
+                            <select id="lob-filter" class="border border-slate-300 rounded p-2 text-sm text-slate-700" onchange="updateBarChart()">
+                                <option value="all">Tất cả nghiệp vụ</option>
+                                <option value="property">Tài sản & Kỹ thuật</option>
+                                <option value="motor">Xe cơ giới</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <canvas id="accumulationChart"></canvas>
+                    </div>
+                    <p class="text-xs text-center text-slate-500 mt-3 font-style: italic">Biểu đồ thể hiện TIV so với Ngưỡng chịu đựng. Màu đỏ cảnh báo khu vực đang bị vượt giới hạn tích tụ.</p>
+                </div>
+
+                <hr class="border-slate-200 my-10">
+
+                <!-- Chart 2: EP Curve -->
+                <div class="mb-10">
+                    <div>
+                        <h3 class="font-bold text-xl text-slate-800">Đường cong Xác suất Vượt ngưỡng (Exceedance Probability - EP Curve)</h3>
+                        <p class="text-sm text-textLight mt-1 mb-4">Yêu cầu hệ thống phải sinh ra hoặc tích hợp mô hình CAT (Catastrophe) để vẽ đường cong EP. Biểu đồ chỉ ra xác suất (Chu kỳ lặp lại - Return Period) của một thảm họa và mức bồi thường ước tính tương ứng (OEP/AEP).</p>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <canvas id="epCurveChart"></canvas>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                        <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                            <h4 class="font-bold text-blue-900 text-sm">PML tại Chu kỳ 250 năm (1-in-250 years)</h4>
+                            <p class="text-2xl font-bold text-blue-700 mt-1">1,450 Tỷ VND</p>
+                            <p class="text-xs text-blue-600 mt-1">Xác suất xảy ra trong 1 năm: 0.4%</p>
+                        </div>
+                        <div class="bg-amber-50 p-4 rounded-lg border border-amber-100">
+                            <h4 class="font-bold text-amber-900 text-sm">AAL (Average Annual Loss)</h4>
+                            <p class="text-2xl font-bold text-amber-700 mt-1">85 Tỷ VND</p>
+                            <p class="text-xs text-amber-600 mt-1">Tổn thất trung bình hàng năm kỳ vọng</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 4: MÔ ĐUN CHỨC NĂNG -->
+            <section id="sec-chucnang" class="content-section hidden animate-fade-in">
+                <header class="mb-8">
+                    <h2 class="text-3xl font-bold text-primary mb-3">4. Các Mô-đun Chức năng Yêu cầu</h2>
+                    <p class="text-lg text-textLight leading-relaxed">
+                        Kiến trúc hệ thống được chia thành các mô-đun độc lập nhưng liên kết chặt chẽ. Người dùng tương tác với hệ thống thông qua các giao diện nghiệp vụ cụ thể. Nhấp vào các tab dưới đây để xem chức năng yêu cầu cho từng mô-đun.
+                    </p>
+                </header>
+
+                <!-- Tab Component -->
+                <div class="w-full">
+                    <div class="flex border-b border-slate-200 overflow-x-auto" id="module-tabs">
+                        <button class="tab-btn active px-6 py-3 font-medium text-primary border-b-2 border-primary whitespace-nowrap" onclick="switchTab(event, 'tab-geo')">Mô-đun Geocoding</button>
+                        <button class="tab-btn px-6 py-3 font-medium text-textLight hover:text-primary whitespace-nowrap" onclick="switchTab(event, 'tab-scenario')">Phân tích Kịch bản (Scenario)</button>
+                        <button class="tab-btn px-6 py-3 font-medium text-textLight hover:text-primary whitespace-nowrap" onclick="switchTab(event, 'tab-reporting')">Báo cáo & Dashboard</button>
+                    </div>
+
+                    <div class="bg-white border border-t-0 border-slate-200 rounded-b-lg p-6 min-h-[300px]">
+                        <!-- Tab 1 Content -->
+                        <div id="tab-geo" class="tab-content block animate-fade-in">
+                            <h3 class="text-xl font-bold text-slate-800 mb-4">Chức năng Định vị & Ánh xạ Không gian</h3>
+                            <ul class="space-y-4">
+                                <li class="flex items-start">
+                                    <span class="text-green-500 mr-2 mt-1">&#10004;</span>
+                                    <div>
+                                        <h4 class="font-semibold text-slate-700">Làm sạch địa chỉ tự động (Address Cleansing)</h4>
+                                        <p class="text-sm text-textLight">Chuẩn hóa cấu trúc địa chỉ đầu vào từ hệ thống Core (chữa lỗi chính tả, chuẩn hóa tên quận/huyện).</p>
+                                    </div>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="text-green-500 mr-2 mt-1">&#10004;</span>
+                                    <div>
+                                        <h4 class="font-semibold text-slate-700">Tích hợp API Bản đồ (Google Maps/Bing Maps)</h4>
+                                        <p class="text-sm text-textLight">Chuyển đổi địa chỉ văn bản thành tọa độ (X, Y) với các mức độ tin cậy (Roof-top, Street, Ward level).</p>
+                                    </div>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="text-green-500 mr-2 mt-1">&#10004;</span>
+                                    <div>
+                                        <h4 class="font-semibold text-slate-700">Gán mã Vùng Rủi ro (Zone Mapping)</h4>
+                                        <p class="text-sm text-textLight">Tự động đối chiếu tọa độ với bản đồ rủi ro lũ lụt, động đất để gán mức xếp hạng rủi ro (Hazard rating).</p>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- Tab 2 Content -->
+                        <div id="tab-scenario" class="tab-content hidden animate-fade-in">
+                            <h3 class="text-xl font-bold text-slate-800 mb-4">Mô phỏng Thảm họa & Kiểm tra Sức chịu đựng</h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div class="p-4 border border-slate-200 rounded bg-slate-50">
+                                    <h4 class="font-bold text-slate-700 mb-2">Deterministic Scenario (Kịch bản xác định)</h4>
+                                    <p class="text-sm text-textLight">Cho phép người dùng vẽ một vòng tròn (Ring-fencing) trên bản đồ (ví dụ: bán kính 5km quanh tâm bão tại Đà Nẵng) và tính toán tổng TIV, số lượng hợp đồng nằm trong vùng đó lập tức.</p>
+                                </div>
+                                <div class="p-4 border border-slate-200 rounded bg-slate-50">
+                                    <h4 class="font-bold text-slate-700 mb-2">Probabilistic Models (Mô hình xác suất)</h4>
+                                    <p class="text-sm text-textLight">Tích hợp catalogue thảm họa (hàng chục ngàn kịch bản bão/lũ lịch sử và giả định) để chạy mô phỏng ngẫu nhiên, từ đó vẽ ra đường cong EP Curve.</p>
+                                </div>
+                                <div class="p-4 border border-slate-200 rounded bg-slate-50 sm:col-span-2">
+                                    <h4 class="font-bold text-slate-700 mb-2">Tác động của Hợp đồng Tái bảo hiểm (Net Position)</h4>
+                                    <p class="text-sm text-textLight">Áp dụng cấu trúc hợp đồng tái bảo hiểm (Quota Share, Surplus, Excess of Loss) lên tổng tổn thất gộp (Gross Loss) để tính ra tổn thất giữ lại thuần (Net Retained Loss) của doanh nghiệp.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab 3 Content -->
+                        <div id="tab-reporting" class="tab-content hidden animate-fade-in">
+                            <h3 class="text-xl font-bold text-slate-800 mb-4">Yêu cầu Báo cáo Quản trị</h3>
+                            <p class="text-sm text-textLight mb-4">Hệ thống phải cung cấp khả năng tự tạo báo cáo (Ad-hoc reporting) và xuất xưởng các báo cáo chuẩn quốc tế định kỳ.</p>
+                            <ul class="list-disc pl-5 text-sm text-slate-700 space-y-2 mb-4">
+                                <li><strong>Báo cáo CRESTA Profile:</strong> Phân bổ TIV theo các vùng CRESTA tại Việt Nam để gửi cho nhà nhận tái bảo hiểm.</li>
+                                <li><strong>Báo cáo Giám sát Hạn mức:</strong> Cảnh báo thời gian thực khi underwriters phát hành đơn bảo hiểm làm vượt hạn mức tích tụ tại một mã bưu chính (Postal code) cụ thể.</li>
+                                <li><strong>Bản đồ nhiệt rủi ro (Heatmaps):</strong> Trực quan hóa khu vực tập trung giá trị tài sản cao trên nền tảng bản đồ GIS.</li>
+                            </ul>
+                            <div class="bg-blue-900 text-white p-4 rounded-lg text-center mt-6">
+                                <span class="font-bold text-accent">&#9888; Yêu cầu Phi chức năng:</span> Khả năng xử lý hàng triệu bản ghi hợp đồng và chạy mô phỏng trong thời gian dưới 15 phút. Xuất dữ liệu đa định dạng (CSV, PDF, API).
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Vanilla JS Logic -->
+    <script>
+        // --- State Management ---
+        const state = {
+            activeSection: 'sec-tongquan',
+            chartInstances: {},
+            barChartData: {
+                all: [1200, 850, 400, 250, 150],
+                property: [900, 600, 300, 150, 100],
+                motor: [300, 250, 100, 100, 50]
+            },
+            regions: ['Hà Nội', 'TP. Hồ Chí Minh', 'Đà Nẵng', 'Bình Dương', 'Đồng Nai'],
+            thresholds: [1000, 1000, 500, 300, 300] // Limits per region
+        };
+
+        // --- Navigation Logic ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const navButtons = document.querySelectorAll('.nav-btn');
+            
+            navButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    // Update active section
+                    const targetId = e.target.getAttribute('data-target');
+                    switchSection(targetId);
+                    
+                    // Close mobile menu if open
+                    document.getElementById('mobile-menu').classList.add('hidden');
+                });
+            });
+
+            // Mobile menu toggles
+            document.getElementById('mobile-menu-btn').addEventListener('click', () => {
+                document.getElementById('mobile-menu').classList.remove('hidden');
+            });
+            document.getElementById('close-mobile-menu').addEventListener('click', () => {
+                document.getElementById('mobile-menu').classList.add('hidden');
+            });
+
+            // Initialize Charts
+            initCharts();
+        });
+
+        function switchSection(targetId) {
+            // Hide all sections
+            document.querySelectorAll('.content-section').forEach(sec => {
+                sec.classList.remove('block');
+                sec.classList.add('hidden');
+            });
+            // Show target
+            document.getElementById(targetId).classList.remove('hidden');
+            document.getElementById(targetId).classList.add('block');
+
+            // Update nav button styles (Desktop)
+            document.querySelectorAll('#nav-menu .nav-btn').forEach(btn => {
+                if(btn.getAttribute('data-target') === targetId) {
+                    btn.classList.replace('text-blue-200', 'text-white');
+                    btn.classList.add('bg-blue-800');
+                    btn.classList.replace('hover:bg-blue-800', 'font-medium'); // keep it styled active
+                } else {
+                    btn.classList.replace('text-white', 'text-blue-200');
+                    btn.classList.remove('bg-blue-800', 'font-medium');
+                    btn.classList.add('hover:bg-blue-800');
+                }
+            });
+        }
+
+        // --- Interactive Components Logic ---
+
+        // Accordion
+        function toggleAccordion(id) {
+            const content = document.getElementById(id);
+            const icon = document.getElementById('icon-' + id);
+            
+            if (content.style.maxHeight) {
+                // Close
+                content.style.maxHeight = null;
+                icon.style.transform = "rotate(0deg)";
+            } else {
+                // Open
+                content.style.maxHeight = content.scrollHeight + "px";
+                icon.style.transform = "rotate(45deg)";
+            }
+        }
+
+        // Tabs
+        function switchTab(evt, tabId) {
+            // Hide all contents
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.add('hidden');
+                tab.classList.remove('block');
+            });
+            // Remove active style from all buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active', 'text-primary', 'border-b-2', 'border-primary');
+                btn.classList.add('text-textLight', 'hover:text-primary');
+            });
+
+            // Show current tab
+            document.getElementById(tabId).classList.remove('hidden');
+            document.getElementById(tabId).classList.add('block');
+            
+            // Add active style to clicked button
+            evt.currentTarget.classList.remove('text-textLight', 'hover:text-primary');
+            evt.currentTarget.classList.add('active', 'text-primary', 'border-b-2', 'border-primary');
+        }
+
+        // --- Chart.js Implementations ---
+
+        function initCharts() {
+            // Set global defaults
+            Chart.defaults.font.family = "'Inter', sans-serif";
+            Chart.defaults.color = '#64748b';
+
+            // 1. Accumulation Bar Chart
+            const ctxBar = document.getElementById('accumulationChart').getContext('2d');
+            state.chartInstances.bar = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: state.regions,
+                    datasets: [
+                        {
+                            label: 'TIV Hiện tại (Tỷ VND)',
+                            data: state.barChartData.all,
+                            backgroundColor: function(context) {
+                                const index = context.dataIndex;
+                                const value = context.dataset.data[index];
+                                const threshold = state.thresholds[index];
+                                // Red if over threshold, Blue otherwise
+                                return value > threshold ? 'rgba(239, 68, 68, 0.8)' : 'rgba(59, 130, 246, 0.8)';
+                            },
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'Ngưỡng Rủi ro (Capacity Limit)',
+                            data: state.thresholds,
+                            type: 'line',
+                            borderColor: '#f59e0b',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            pointStyle: 'rect',
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false, // Essential for flex/grid container compliance
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y + ' Tỷ VND';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Tỷ VND' }
+                        },
+                        x: {
+                            ticks: {
+                                // Label wrapping logic if labels get too long
+                                callback: function(val, index) {
+                                    let label = this.getLabelForValue(val);
+                                    if (label.length > 16) {
+                                        return label.substr(0, 16) + '...';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 2. EP Curve Line/Area Chart
+            const ctxLine = document.getElementById('epCurveChart').getContext('2d');
+            
+            // Generate mock EP data (exponential decay curve representing probability vs loss)
+            const returnPeriods = [10, 20, 50, 100, 200, 250, 500, 1000];
+            const probability = returnPeriods.map(rp => (1/rp * 100).toFixed(1) + '%');
+            // Loss increases as probability decreases (Return period increases)
+            const lossAmounts = [200, 450, 800, 1100, 1350, 1450, 1800, 2200]; 
+
+            state.chartInstances.line = new Chart(ctxLine, {
+                type: 'line',
+                data: {
+                    labels: returnPeriods.map(rp => rp + ' năm'),
+                    datasets: [{
+                        label: 'Tổn thất ước tính - OEP (Tỷ VND)',
+                        data: lossAmounts,
+                        borderColor: '#1e3a8a',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)', // Area fill
+                        borderWidth: 3,
+                        pointBackgroundColor: '#f59e0b',
+                        pointBorderColor: '#fff',
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        fill: true,
+                        tension: 0.4 // Smooth curve
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    const index = context[0].dataIndex;
+                                    return 'Chu kỳ lặp lại: ' + returnPeriods[index] + ' năm (Xác suất ' + probability[index] + ')';
+                                },
+                                label: function(context) {
+                                    return 'Tổn thất dự kiến: ' + context.parsed.y + ' Tỷ VND';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            title: { display: true, text: 'Mức Bồi thường (Tỷ VND)' },
+                            beginAtZero: true
+                        },
+                        x: {
+                            title: { display: true, text: 'Chu kỳ lặp lại (Return Period)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Handle dynamic data update for Bar Chart
+        function updateBarChart() {
+            const filterValue = document.getElementById('lob-filter').value;
+            const chart = state.chartInstances.bar;
+            
+            // Update data based on selection
+            chart.data.datasets[0].data = state.barChartData[filterValue];
+            chart.update();
+        }
+    </script>
+</body>
+</html>
